@@ -2,12 +2,11 @@ import axios from 'axios';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import { BASE_URL, options } from './pixabay_api.js'; 
-
+import { BASE_URL, options } from './pixabay_api.js';
 
 const galleryElement = document.querySelector('.gallery');
 const searchInputElement = document.querySelector('input[name="searchQuery"]');
-const searchFormElement = document.querySelector('.search-form');
+const searchFormElement = document.querySelector('.search_form');
 
 const lightbox = new SimpleLightbox('.lightbox', {
   captions: true,

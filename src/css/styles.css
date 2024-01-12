@@ -20,7 +20,7 @@ body {
 }
 
 /* Search form styling */
-.search-form {
+.search_form {
   display: flex;
   justify-content: center;
   align-items: center;
