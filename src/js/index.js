@@ -2,111 +2,141 @@ import axios from 'axios';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import { BASE_URL, options } from './pixabay_api.js';
 
-const galleryElement = document.querySelector('.gallery');
-const searchInputElement = document.querySelector('input[name="searchQuery"]');
-const searchFormElement = document.querySelector('.search_form');
+// Import Pixabay API configurations
+import { BASE_URL, options } from './pixabay_api.js'; 
+
+const galleryEl = document.querySelector('.gallery');
+const searchInputEl = document.querySelector('input[name="searchQuery"]');
+const searchFormEl = document.getElementById('search-form');
+const loadMoreBtn = document.querySelector('.load-more');
 
 const lightbox = new SimpleLightbox('.lightbox', {
-  captions: true,
   captionsData: 'alt',
   captionDelay: 250,
 });
 
-// Function to render image cards into the gallery
-function renderImageCards(images) {
-  const gallery = $('.gallery');
-  gallery.empty(); // Clear the gallery content
+let totalHits = 0;
+let reachedEnd = false;
 
-  if (images.length === 0) {
-    Notify.info(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
+async function renderGallery(hits) {
+  const markup = hits
+    .map(
+      ({
+        webformatURL,
+        largeImageURL,
+        tags,
+        likes,
+        views,
+        comments,
+        downloads,
+      }) => {
+        return `
+              <a href="${largeImageURL}" class="lightbox">
+                  <div class="photo-card">
+                      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+                      <div class="info">
+                          <p class="info-item">
+                              <b>Likes</b>
+                              ${likes}
+                          </p>
+                          <p class="info-item">
+                              <b>Views</b>
+                              ${views}
+                          </p>
+                          <p class="info-item">
+                              <b>Comments</b>
+                              ${comments}
+                          </p>
+                          <p class="info-item">
+                              <b>Downloads</b>
+                              ${downloads}
+                          </p>
+                      </div>
+                  </div>
+              </a>
+              `;
+      }
+    )
+    .join('');
+
+  galleryEl.insertAdjacentHTML('beforeend', markup);
+  lightbox.refresh();
+  // Scroll to the newly added images with smooth behavior
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
+}
+
+async function searchImages() {
+  options.params.q = searchInputEl.value.trim();
+  if (options.params.q === '') {
+    Notify.failure('Please enter a search query.');
     return;
   }
 
-  images.forEach(image => {
-    const card = $('<div>').addClass('photo-card');
-    const img = $('<img>').attr({
-      src: image.webformatURL,
-      alt: image.tags,
-      loading: 'lazy',
-    });
-    const info = $('<div>').addClass('info');
+  options.params.page = 1;
+  galleryEl.innerHTML = '';
+  loadMoreBtn.style.display = 'none';
+  reachedEnd = false;
 
-    // Adding information to the card
-    const likes = $('<p>')
-      .addClass('info-item')
-      .html(`<b>Likes:</b> ${image.likes}`);
-    const views = $('<p>')
-      .addClass('info-item')
-      .html(`<b>Views:</b> ${image.views}`);
-    const comments = $('<p>')
-      .addClass('info-item')
-      .html(`<b>Comments:</b> ${image.comments}`);
-    const downloads = $('<p>')
-      .addClass('info-item')
-      .html(`<b>Downloads:</b> ${image.downloads}`);
-
-    info.append(likes, views, comments, downloads);
-    card.append(img, info);
-    gallery.append(card);
-  });
-
-  // Initialize SimpleLightbox after rendering images
-  lightbox.refresh();
-}
-
-// Function to fetch images from the Pixabay API
-async function fetchImages(searchQuery) {
   try {
-    const response = await axios.get(BASE_URL, {
-      params: {
-        q: searchQuery,
-        ...options,
-      },
-    });
+    const response = await axios.get(BASE_URL, options);
+    totalHits = response.data.totalHits;
 
-    const images = response.data.hits;
-    renderImageCards(images);
-  } catch (error) {
-    console.error('Error fetching images:', error);
+    const { hits } = response.data;
+
+    if (hits.length === 0) {
+      Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+    } else {
+      Notify.success(`Hooray! We found ${totalHits} images.`);
+      renderGallery(hits);
+      // Show load more button if there are more images to load
+      if (totalHits > options.params.per_page) {
+        loadMoreBtn.style.display = 'block';
+      }
+    }
+    searchInputEl.value = '';
+  } catch (err) {
+    Notify.failure(err);
   }
 }
 
-// Event listener for the search form
-searchFormElement.addEventListener('submit', function (event) {
-  event.preventDefault();
-  const searchQuery = searchInputElement.value.trim();
+async function loadMore() {
+  options.params.page += 1;
+  try {
+    const response = await axios.get(BASE_URL, options);
+    const hits = response.data.hits;
+    renderGallery(hits);
 
-  if (searchQuery !== '') {
-    fetchImages(searchQuery);
-  } else {
-    Notify.info('Please enter a search query');
+    // If all images are loaded, hide the load more button
+    if (options.params.page * options.params.per_page >= totalHits) {
+      Notify.info("We're sorry, but you've reached the end of search results.");
+      loadMoreBtn.style.display = 'none';
+      reachedEnd = true;
+    }
+  } catch (err) {
+    Notify.failure(err);
   }
+}
+
+searchFormEl.addEventListener('submit', function (e) {
+  e.preventDefault();
+  searchImages();
 });
 
-// Example usage: Replace this with your API call to fetch images
-const exampleImages = [
-  {
-    webformatURL: 'example_small_image_url1.jpg',
-    largeImageURL: 'example_large_image_url1.jpg',
-    tags: 'Example Image 1',
-    likes: 100,
-    views: 500,
-    comments: 20,
-    downloads: 50,
-  },
-  {
-    webformatURL: 'example_small_image_url2.jpg',
-    largeImageURL: 'example_large_image_url2.jpg',
-    tags: 'Example Image 2',
-    likes: 150,
-    views: 700,
-    comments: 30,
-    downloads: 70,
-  },
-];
+loadMoreBtn.addEventListener('click', loadMore);
 
-renderImageCards(exampleImages);
+// Infinite scrolling example (uncomment if you want infinite scrolling)
+// window.addEventListener('scroll', function () {
+//   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+//   if (scrollTop + clientHeight >= scrollHeight && !reachedEnd) {
+//     loadMore();
+//   }
+// });

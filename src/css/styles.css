@@ -11,6 +11,25 @@ body {
   background-color: #f4f4f4;
 }
 
+img {
+  display: block;
+  width: 270px;
+  height: 150px;
+  object-fit: cover;
+}
+
+.section {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.container {
+  padding-left: 15px;
+  padding-right: 15px;
+  margin: 0 auto;
+  width: 1200px;
+}
+
 /* Header styling */
 .header {
   background-color: #333;
