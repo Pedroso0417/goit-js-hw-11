@@ -1,15 +1,12 @@
-import axios from 'axios';
-import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import SimpleLightbox from 'simplelightbox';
+import axios from "axios";
+import { Notify } from "notiflix/build/notiflix-notify-aio";
+import SimpleLightbox from "simplelightbox";
 import 'simplelightbox/dist/simple-lightbox.min.css';
-
-// Import Pixabay API configurations
-import { BASE_URL, options } from './pixabay_api.js'; 
+import { BASE_URL, options } from './pixabay-api.js';
 
 const galleryEl = document.querySelector('.gallery');
-const searchInputEl = document.querySelector('input[name="searchQuery"]');
+const searchInputEl = document.querySelector('input[name="searchQuery"');
 const searchFormEl = document.getElementById('search-form');
-const loadMoreBtn = document.querySelector('.load-more');
 
 const lightbox = new SimpleLightbox('.lightbox', {
   captionsData: 'alt',
@@ -19,7 +16,7 @@ const lightbox = new SimpleLightbox('.lightbox', {
 let totalHits = 0;
 let reachedEnd = false;
 
-async function renderGallery(hits) {
+function renderGallery(hits) {
   const markup = hits
     .map(
       ({
@@ -61,27 +58,27 @@ async function renderGallery(hits) {
     .join('');
 
   galleryEl.insertAdjacentHTML('beforeend', markup);
+
+  //   If the user has reached the end of the collection
+  if (options.params.page * options.params.per_page >= totalHits) {
+    if (!reachedEnd) {
+      Notify.info("We're sorry, but you've reached the end of search results.");
+      reachedEnd = true;
+    }
+  }
   lightbox.refresh();
-  // Scroll to the newly added images with smooth behavior
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
 }
 
-async function searchImages() {
+///////////////////////////////////////////////////////////////
+
+async function handleSubmit(e) {
+  e.preventDefault();
   options.params.q = searchInputEl.value.trim();
   if (options.params.q === '') {
-    Notify.failure('Please enter a search query.');
     return;
   }
-
   options.params.page = 1;
   galleryEl.innerHTML = '';
-  loadMoreBtn.style.display = 'none';
   reachedEnd = false;
 
   try {
@@ -89,6 +86,7 @@ async function searchImages() {
     totalHits = response.data.totalHits;
 
     const { hits } = response.data;
+    console.log(hits);
 
     if (hits.length === 0) {
       Notify.failure(
@@ -97,10 +95,6 @@ async function searchImages() {
     } else {
       Notify.success(`Hooray! We found ${totalHits} images.`);
       renderGallery(hits);
-      // Show load more button if there are more images to load
-      if (totalHits > options.params.per_page) {
-        loadMoreBtn.style.display = 'block';
-      }
     }
     searchInputEl.value = '';
   } catch (err) {
@@ -108,35 +102,50 @@ async function searchImages() {
   }
 }
 
+searchFormEl.addEventListener('submit', handleSubmit);
+
+///////////////////////////////////////////////////////////////
+
 async function loadMore() {
+  // Show loading spinner
+  document.getElementById('loading-spinner').style.display = 'block';
+
   options.params.page += 1;
   try {
     const response = await axios.get(BASE_URL, options);
     const hits = response.data.hits;
     renderGallery(hits);
-
-    // If all images are loaded, hide the load more button
-    if (options.params.page * options.params.per_page >= totalHits) {
-      Notify.info("We're sorry, but you've reached the end of search results.");
-      loadMoreBtn.style.display = 'none';
-      reachedEnd = true;
-    }
   } catch (err) {
     Notify.failure(err);
+  } finally {
+    // Hide loading spinner
+    document.getElementById('loading-spinner').style.display = 'none';
   }
 }
 
-searchFormEl.addEventListener('submit', function (e) {
-  e.preventDefault();
-  searchImages();
-});
 
-loadMoreBtn.addEventListener('click', loadMore);
 
-// Infinite scrolling example (uncomment if you want infinite scrolling)
-// window.addEventListener('scroll', function () {
-//   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-//   if (scrollTop + clientHeight >= scrollHeight && !reachedEnd) {
-//     loadMore();
-//   }
-// });
+// Utility function for debounce
+function debounce(func, wait) {
+  let timeout;
+  return function () {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(context, args);
+    }, wait);
+  };
+}
+
+// Debounced handleScroll function
+const debouncedHandleScroll = debounce(function () {
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+
+  if (scrollTop + clientHeight >= scrollHeight) {
+    loadMore();
+  }
+}, 200); // Adjust the debounce time as needed
+
+// Add debounced event listener
+window.addEventListener('scroll', debouncedHandleScroll);
