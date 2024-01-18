@@ -40,7 +40,23 @@ img {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
+  padding: 20px 0;
+}
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+}
+.lightbox {
+  color: black;
+  text-decoration: none;
+}
+
+.photo-card {
+  margin-top: 30px;
+  margin-left: 30px;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 /* Search form styling */
@@ -72,42 +88,20 @@ img {
   cursor: pointer;
 }
 
-/* Main section styling */
-.main {
-  padding: 2rem;
-}
-
-/* Gallery styling */
-.gallery {
-  display: flex;
-  flex-wrap: wrap;
-}
-.lightbox {
-  color: black;
-  text-decoration: none;
-}
-
 /* Style for individual photo cards */
-.photo-card {
-  margin-top: 30px;
-  margin-left: 30px;
-
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-}
-
-.photo-card img {
-  width: 100%;
-  height: auto;
-  border-bottom: 1px solid #ddd;
-}
 
 /* Information styling within the card */
 .info {
-  padding: 1rem;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .info-item {
-  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  font-size: 12px;
 }
 
 /* Adjust styles for responsiveness as needed */

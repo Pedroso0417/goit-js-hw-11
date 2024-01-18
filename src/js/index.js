@@ -1,6 +1,6 @@
-import axios from "axios";
-import { Notify } from "notiflix/build/notiflix-notify-aio";
-import SimpleLightbox from "simplelightbox";
+import axios from 'axios';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import { BASE_URL, options } from './pixabay-api.js';
 
@@ -107,9 +107,6 @@ searchFormEl.addEventListener('submit', handleSubmit);
 ///////////////////////////////////////////////////////////////
 
 async function loadMore() {
-  // Show loading spinner
-  document.getElementById('loading-spinner').style.display = 'block';
-
   options.params.page += 1;
   try {
     const response = await axios.get(BASE_URL, options);
@@ -117,35 +114,15 @@ async function loadMore() {
     renderGallery(hits);
   } catch (err) {
     Notify.failure(err);
-  } finally {
-    // Hide loading spinner
-    document.getElementById('loading-spinner').style.display = 'none';
   }
 }
 
-
-
-// Utility function for debounce
-function debounce(func, wait) {
-  let timeout;
-  return function () {
-    const context = this;
-    const args = arguments;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      func.apply(context, args);
-    }, wait);
-  };
-}
-
-// Debounced handleScroll function
-const debouncedHandleScroll = debounce(function () {
+function handleScroll() {
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
 
   if (scrollTop + clientHeight >= scrollHeight) {
     loadMore();
   }
-}, 200); // Adjust the debounce time as needed
+}
 
-// Add debounced event listener
-window.addEventListener('scroll', debouncedHandleScroll);
+window.addEventListener('scroll', handleScroll);
