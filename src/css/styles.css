@@ -52,6 +52,8 @@ img {
   border: 1px solid #ccc;
   border-radius: 5px;
   margin-right: 0.5rem;
+  background-color: black;
+  color: white;
 }
 .search_form {
   display: flex;
@@ -63,8 +65,8 @@ img {
 .search-form button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
-  background-color: #4caf50;
-  color: white;
+  background-color: blue;
+  color: black;
   border: none;
   border-radius: 5px;
   cursor: pointer;
